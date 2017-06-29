@@ -1,0 +1,5 @@
+#/bin/sh
+MASTODON_HOST=mstdn.jp
+ACCESS_TOKEN=
+STATUS=$1
+curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${STATUS}"

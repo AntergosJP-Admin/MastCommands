@@ -1,0 +1,39 @@
+#/bin/sh
+
+MASTODON_HOST=mstdn.jp
+ACCESS_TOKEN=
+
+if [ $# = 1 ] ; then
+  FILE_PATH=$1
+  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.url'`
+  ARRAY=($RESULTS)
+  ID=${ARRAY[0]}
+
+  TMP=${ARRAY[1]}
+  URL=`echo ${TMP} | sed -e 's/\"//g'`
+
+  STATUS=${URL}
+
+  MEDIA_IDS="${ID}"
+  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "status=${STATUS}" -F "media_ids[]=${MEDIA_IDS}"
+
+elif [ $# = 2 ] ; then
+  FILE_PATH=$1
+  MAIN_STATUS=$2
+
+  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.url'`
+  ARRAY=($RESULTS)
+  ID=${ARRAY[0]}
+
+  TMP=${ARRAY[1]}
+  URL=`echo ${TMP} | sed -e 's/\"//g'`
+
+  STATUS=${MAIN_STATUS}''${URL}
+
+  MEDIA_IDS="${ID}"
+  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "status=${STATUS}" -F "media_ids[]=${MEDIA_IDS}"
+
+else
+  FNAME=`basename $0`
+  echo "  Usage: ${FNAME} media_path_string ['toot_string']" >&2
+fi

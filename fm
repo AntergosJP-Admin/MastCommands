@@ -1,0 +1,15 @@
+#/bin/sh
+if [ $# = 1 ] ; then
+  fmastodon $1 | jq '.[]|{id: .id,username: .account.username, display_name: .account.display_name,content: .content}'
+elif [ $# = 2 ] ; then
+  CHK=$2
+  expr "$CHK" + 1 >/dev/null 2>&1
+  if [ $? -lt 2 ] ; then
+    fmastodon $1 $2 | jq '.[]|{id: .id,username: .account.username,display_name: .account.display_name,content: .content}'
+  else
+    echo "  Please specify an integer for id." >&2
+  fi
+else
+  FNAME=`basename $0`
+  echo "  Usage: ${FNAME} domain_string [id]" >&2
+fi
