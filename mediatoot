@@ -5,7 +5,7 @@ ACCESS_TOKEN=
 
 if [ $# = 1 ] ; then
   FILE_PATH=$1
-  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.url'`
+  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.text_url'`
   ARRAY=($RESULTS)
   ID=${ARRAY[0]}
 
@@ -21,7 +21,7 @@ elif [ $# = 2 ] ; then
   FILE_PATH=$1
   MAIN_STATUS=$2
 
-  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.url'`
+  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.text_url'`
   ARRAY=($RESULTS)
   ID=${ARRAY[0]}
 
