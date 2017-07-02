@@ -1,5 +1,77 @@
 #/bin/sh
 MASTODON_HOST=mstdn.jp
 ACCESS_TOKEN=
-STATUS=$1
-curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${STATUS}"
+VALUE_T=
+VALUE_F=
+FLIST=()
+URLLIST=
+IDS=()
+URLS=()
+
+while getopts :t:f: OPT
+do
+  case $OPT in
+    "t" )
+      VALUE_T="$OPTARG"
+      ;;
+    "f" )
+      VALUE_F="${OPTARG}"
+      FLIST+=( "\"${VALUE_F}\"" )
+      ;;
+    "?" )
+      echo >&2 "  使い方:  toot [-t 'トゥートの内容'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
+      exit 1
+      ;;
+  esac
+done
+
+if [ 4 -lt "${#FLIST[@]}" ]; then
+      echo >&2 "  使い方:  toot [-t 'トゥートの内容'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
+  exit 1
+
+elif [ 0 -eq "${#FLIST[@]}" ]; then
+  if [ 0 -eq "${#VALUE_T}" ]; then
+    echo '  トゥートの内容もしくはメディアの指定のうち最低どちらかが必要です。' >&2
+    exit 0
+  fi
+fi
+
+for I in `seq 0 "${#FLIST[@]}"`
+do
+  if [ $I -eq "${#FLIST[@]}" ]; then
+    break
+  fi
+
+  FILE_PATH="${FLIST[${I}]}"
+  RESULTS=`curl -X POST -Ss https://${MASTODON_HOST}/api/v1/media --header "Authorization: Bearer ${ACCESS_TOKEN}" -F "file=@${FILE_PATH}" | jq '.id,.text_url'`
+
+  ARRAY=($RESULTS)
+  ID=${ARRAY[0]}
+  IDS+=( $ID )
+  TMP=${ARRAY[1]}
+  URL=`echo "${TMP}" | sed -e 's/\"//g'`
+  URLS+=( $URL )
+done
+
+for I in `seq 0 "${#IDS[@]}"`
+do
+  if [ $I -eq "${#IDS[@]}" ]; then
+    break
+  fi
+
+  if [ $I -eq 0 ]; then
+    IDLIST="${IDS[$I]}"
+    PRMS="media_ids[]=${IDS[$I]}"
+  else
+    IDLIST="${IDLIST}"" ${IDS[$I]}"
+    PRMS="${PRMS}""&media_ids[]=${IDS[$I]}"
+  fi
+  URLLIST="${URLLIST}""${URLS[$I]}"
+done
+
+TOOT="${VALUE_T}""${URLLIST}"
+if [ 0 -eq "${#IDS[@]}" ]; then
+  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
+else
+  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
+fi
