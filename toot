@@ -3,12 +3,13 @@ MASTODON_HOST=mstdn.jp
 ACCESS_TOKEN=
 VALUE_T=
 VALUE_F=
+VALUE_R=""
 FLIST=()
 URLLIST=
 IDS=()
 URLS=()
 
-while getopts :t:f:h OPT
+while getopts :t:f:hr: OPT
 do
   case $OPT in
     "t" )
@@ -17,6 +18,9 @@ do
     "f" )
       VALUE_F="${OPTARG}"
       FLIST+=( "\"${VALUE_F}\"" )
+      ;;
+    "r" )
+      VALUE_R="$OPTARG"
       ;;
     "h" )
       FNAME=`basename $0`
@@ -78,7 +82,15 @@ done
 
 TOOT="${VALUE_T}""${URLLIST}"
 if [ 0 -eq "${#IDS[@]}" ]; then
-  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
+  if [ 0 -lt "${#VALUE_R}" ]; then
+    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}"
+  else
+    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
+  fi
 else
-  curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
+  if [ 0 -lt ${#VALUE_R} ]; then
+    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}"
+  else
+    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
+  fi
 fi
