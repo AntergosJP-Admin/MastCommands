@@ -4,12 +4,13 @@ ACCESS_TOKEN=
 VALUE_T=
 VALUE_F=
 VALUE_R=""
+VALUE_W=""
 FLIST=()
 URLLIST=
 IDS=()
 URLS=()
 
-while getopts :t:f:hr: OPT
+while getopts :t:f:hr:w: OPT
 do
   case $OPT in
     "t" )
@@ -22,14 +23,17 @@ do
     "r" )
       VALUE_R="$OPTARG"
       ;;
+    "w" )
+      VALUE_W="$OPTARG"
+      ;;
     "h" )
       FNAME=`basename $0`
-      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
+      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-w '警告文'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
       exit 0
       ;;
     "?" )
       FNAME=`basename $0`
-      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
+      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-w '警告文'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
       exit 1
       ;;
   esac
@@ -37,7 +41,7 @@ done
 
 if [ 4 -lt "${#FLIST[@]}" ]; then
       FNAME=`basename $0`
-      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
+      echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-w '警告文'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
   exit 1
 
 elif [ 0 -eq "${#FLIST[@]}" ]; then
@@ -83,14 +87,30 @@ done
 TOOT="${VALUE_T}""${URLLIST}"
 if [ 0 -eq "${#IDS[@]}" ]; then
   if [ 0 -lt "${#VALUE_R}" ]; then
-    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}"
+    if [ 0 -lt "${#VALUE_W}" ]; then
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}" -d "spoiler_text=${VALUE_W}"
+    else
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}"
+    fi
   else
-    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
+    if [ 0 -lt "${#VALUE_W}" ]; then
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "spoiler_text=${VALUE_W}"
+    else
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
+    fi
   fi
 else
   if [ 0 -lt ${#VALUE_R} ]; then
-    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}"
+    if [ 0 -lt "${#VALUE_W}" ]; then
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}" -d "spoiler_text=${VALUE_W}"
+    else
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}"
+    fi
   else
-    curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
+    if [ 0 -lt "${#VALUE_W}" ]; then
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "spoiler_text=${VALUE_W}"
+    else
+      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
+    fi
   fi
 fi
