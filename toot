@@ -9,6 +9,7 @@ FLIST=()
 URLLIST=
 IDS=()
 URLS=()
+ORG_CMD="curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header \"Authorization: Bearer ${ACCESS_TOKEN}\""
 
 while getopts :t:f:hr:w: OPT
 do
@@ -22,9 +23,11 @@ do
       ;;
     "r" )
       VALUE_R="$OPTARG"
+      REPLY_OPT=" -d \"in_reply_to_id=${VALUE_R}\""
       ;;
     "w" )
       VALUE_W="$OPTARG"
+      WARNING_OPT=" -d \"spoiler_text=${VALUE_W}\""
       ;;
     "h" )
       FNAME=`basename $0`
@@ -39,6 +42,7 @@ do
   esac
 done
 
+# パラメーターチェック
 if [ 4 -lt "${#FLIST[@]}" ]; then
       FNAME=`basename $0`
       echo >&2 "  使い方:  ${FNAME} [-r トゥートID] [-t 'トゥートの内容'] [-w '警告文'] [-f 'メディア・ファイルのパス 1'[ -f 'メディア・ファイルのパス 2'[ -f 'メディア・ファイルのパス 3'[ -f 'メディア・ファイルのパス 4']]]]"
@@ -51,6 +55,7 @@ elif [ 0 -eq "${#FLIST[@]}" ]; then
   fi
 fi
 
+# メディアのアップロードとメディアID取得
 for I in `seq 0 "${#FLIST[@]}"`
 do
   if [ $I -eq "${#FLIST[@]}" ]; then
@@ -68,6 +73,7 @@ do
   URLS+=( $URL )
 done
 
+# メディアIdsパラメーター設定
 for I in `seq 0 "${#IDS[@]}"`
 do
   if [ $I -eq "${#IDS[@]}" ]; then
@@ -81,36 +87,11 @@ do
     IDLIST="${IDLIST}"" ${IDS[$I]}"
     PRMS="${PRMS}""&media_ids[]=${IDS[$I]}"
   fi
-  URLLIST="${URLLIST}""${URLS[$I]}"
+  URLLIST="${URLLIST}""%0a${URLS[$I]}"
 done
-
 TOOT="${VALUE_T}""${URLLIST}"
-if [ 0 -eq "${#IDS[@]}" ]; then
-  if [ 0 -lt "${#VALUE_R}" ]; then
-    if [ 0 -lt "${#VALUE_W}" ]; then
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}" -d "spoiler_text=${VALUE_W}"
-    else
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "in_reply_to_id=${VALUE_R}"
-    fi
-  else
-    if [ 0 -lt "${#VALUE_W}" ]; then
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "spoiler_text=${VALUE_W}"
-    else
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}"
-    fi
-  fi
-else
-  if [ 0 -lt ${#VALUE_R} ]; then
-    if [ 0 -lt "${#VALUE_W}" ]; then
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}" -d "spoiler_text=${VALUE_W}"
-    else
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "in_reply_to_id=${VALUE_R}"
-    fi
-  else
-    if [ 0 -lt "${#VALUE_W}" ]; then
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}" -d "spoiler_text=${VALUE_W}"
-    else
-      curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header "Authorization: Bearer ${ACCESS_TOKEN}" -d "status=${TOOT}" -d "${PRMS}"
-    fi
-  fi
-fi
+TOOT_OPT=" -d \"status=${TOOT}\""
+MEDIA_OPT=" -d \"${PRMS}\""
+
+CMD="$ORG_CMD""$TOOT_OPT""$REPLY_OPT""$WARNING_OPT""$MEDIA_OPT"
+eval ${CMD}
