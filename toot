@@ -58,9 +58,11 @@ elif [ 0 -eq "${#FLIST[@]}" ]; then
     exit 0
   fi
 fi
-if [ $VALUE_V != "direct" -a $VALUE_V != "private" -a $VALUE_V != "unlisted" -a $VALUE_V != "public" ]; then
-  echo '  公開範囲の指定が間違っています。' >&2
-  exit 0
+if [ $VALUE_V ]; then
+  if [ $VALUE_V != "direct" -a $VALUE_V != "private" -a $VALUE_V != "unlisted" -a $VALUE_V != "public" ]; then
+    echo '  公開範囲の指定が間違っています。' >&2
+    exit 0
+  fi
 fi
 
 # メディアのアップロードとメディアID取得
