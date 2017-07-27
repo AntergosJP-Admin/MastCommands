@@ -11,7 +11,7 @@ IDS=()
 URLS=()
 ORG_CMD="curl -X POST -Ss https://${MASTODON_HOST}/api/v1/statuses --header \"Authorization: Bearer ${ACCESS_TOKEN}\""
 
-while getopts :t:f:hr:w: OPT
+while getopts :t:f:hr:w:v: OPT
 do
   case $OPT in
     "t" )
@@ -28,6 +28,10 @@ do
     "w" )
       VALUE_W="$OPTARG"
       WARNING_OPT=" -d \"spoiler_text=${VALUE_W}\""
+      ;;
+    "v" )
+      VALUE_V="$OPTARG"
+      VISIBLITY_OPT=" -d \"visibility=${VALUE_V}\""
       ;;
     "h" )
       FNAME=`basename $0`
@@ -53,6 +57,10 @@ elif [ 0 -eq "${#FLIST[@]}" ]; then
     echo '  トゥートの内容もしくはメディアの指定のうち最低どちらかが必要です。' >&2
     exit 0
   fi
+fi
+if [ $VALUE_V != "direct" -a $VALUE_V != "private" -a $VALUE_V != "unlisted" -a $VALUE_V != "public" ]; then
+  echo '  公開範囲の指定が間違っています。' >&2
+  exit 0
 fi
 
 # メディアのアップロードとメディアID取得
@@ -91,7 +99,11 @@ do
 done
 TOOT="${VALUE_T}""${URLLIST}"
 TOOT_OPT=" -d \"status=${TOOT}\""
-MEDIA_OPT=" -d \"${PRMS}\""
+if [ ${PRMS} ]; then
+  MEDIA_OPT=" -d \"${PRMS}\""
+else
+  MEDIA_OPT=""
+fi
 
-CMD="$ORG_CMD""$TOOT_OPT""$REPLY_OPT""$WARNING_OPT""$MEDIA_OPT"
+CMD="$ORG_CMD""$TOOT_OPT""$VISIBLITY_OPT""$REPLY_OPT""$WARNING_OPT""$MEDIA_OPT"
 eval ${CMD}
